@@ -1,41 +1,45 @@
-# Kết quả kiểm tra BTL
+# Kết quả kiểm tra bản Jupyter Notebook
 
-Các số liệu ảnh nguồn dưới đây ghi nhận ở lượt kiểm tra ngày 18 tháng 11 năm 2026. Hai notebook chính đã được loại bỏ theo yêu cầu; dự án hiện chạy bằng ứng dụng Streamlit hoặc CLI.
+Ngày chạy kiểm tra 19 tháng 11 năm 2026. Bốn notebook được chạy lần lượt bằng **bốn kernel Python mới**, không chia sẻ biến và không import module `.py` của dự án. Thư mục làm việc kiểm tra khác thư mục mã nguồn; đầu vào được trỏ tới hai thư mục ảnh gốc.
 
-| Nội dung | Kết quả đã ghi nhận |
-|---|---|
-| Kiểm thử hành vi phần mềm | 17 đạt, 0 thất bại, 0 lỗi |
-| Chạy toàn bộ ảnh nguồn | 69/69 thành công |
-| Tổng dòng đặc trưng vùng trong 69 ảnh | 14.857 dòng, gồm cả vùng bị loại và ảnh nguồn trùng |
-| Kiểm tra nhất quán thống kê | Số vùng bằng hạt ứng viên cộng vùng bị loại; tỷ lệ mỗi trục cộng 100% khi có hạt |
-| Kiểm thử Streamlit | Khởi tạo, nhập chuẩn chiều dài, bật ngưỡng thủ công và báo ngưỡng không hợp lệ |
-| Demo tổng hợp trong ứng dụng | 5 hạt, 0 vùng bị loại, 0 hạt chưa xác định |
-| Kiểm tra giao diện trực tiếp trên trình duyệt | Chưa hoàn tất do công cụ Windows không xác định được URL hiện tại |
+| Notebook | Kết quả | Ô code | Hình đã tạo | Thời gian |
+|---|---|---:|---:|---:|
+| 01 dữ liệu và tiền xử lý | Đạt | 7 | 1 | 95,52 giây |
+| 02 phân đoạn và tách hạt | Đạt | 9 | 2 | 65,79 giây |
+| 03 trích xuất đặc trưng | Đạt | 9 | 1 | 55,88 giây |
+| 04 phân loại và thống kê | Đạt | 15 | 2 | 18,99 giây |
 
-`scripts/check_project.py` hiện kiểm tra các module qua bộ kiểm thử và ứng dụng bằng Streamlit AppTest, gồm demo tổng hợp; không còn đọc hoặc tạo notebook. Xem `outputs/verification/project_checks.json` và `unit_tests.txt` để biết kết quả lần chạy gần nhất.
+Thời gian là số đo trên môi trường kiểm tra hiện tại, không phải cam kết hiệu năng.
 
-## Dữ liệu thật
+## Dữ liệu và file bàn giao
 
-69 ảnh đọc được, 2 ảnh trùng nội dung và 67 ảnh duy nhất. Chia tập sơ bộ gồm 58 ảnh calibration và 9 ảnh test; cần rà soát ảnh cùng phiên chụp trước khi đánh giá độc lập.
+- Đọc được 69 ảnh nguồn; phát hiện 2 ảnh trùng; xử lý 67 ảnh duy nhất.
+- Chia tập sơ bộ: 58 ảnh calibration và 9 ảnh test.
+- Tạo 14.415 dòng đặc trưng vùng sau khi không xử lý lặp ảnh trùng.
+- Các bước sau đọc lại CSV, ảnh và bản đồ ID nén từ đĩa, không sử dụng biến của kernel trước.
+- Đối chiếu hàm băm xác nhận toàn bộ ảnh nguồn không thay đổi sau khi chạy.
+- Code notebook được kiểm tra cú pháp và các lệnh import, không dùng module triển khai cũ.
 
-Đặc trưng và dự đoán tổng hợp nằm trong `outputs/verification/all_features.csv` và `all_classification.csv`. Mỗi dòng có `image_path` để truy nguyên. Mẫu hộp bao để gán nhãn nằm trong `all_grain_labels_template.csv`.
+## Các kiểm tra hành vi trong notebook
 
-Thời gian cộng dồn xử lý và kiểm tra ảnh trong lượt rà soát đã ghi nhận là khoảng 149,2 giây, chưa bao gồm toàn bộ thời gian xuất ảnh mẫu. Đây là số đo trong môi trường khi đó, không phải cam kết hiệu năng.
+- Notebook 01: danh sách ảnh duy nhất, tệp màu/xám tồn tại và resize giữ tỷ lệ.
+- Notebook 02: hai vùng tiếp xúc trong ảnh giả lập được tách; ảnh rỗng không có vùng; tổng ID khớp bảng vùng.
+- Notebook 03: thay đổi nền không làm đổi GLCM trong mask; mỗi vùng có đúng một dòng đặc trưng.
+- Notebook 04: biên quy tắc Nguyên/Vỡ/Không xác định, hạt cắt biên, xung đột màu và tỷ lệ thống kê nhất quán.
 
-**Chưa có nhãn chuẩn từng hạt trên ảnh thật, nên chưa đo độ chính xác phân loại, precision/recall phát hiện hay độ chính xác đếm trên dữ liệu thật.** Chạy thành công không chứng minh phát hiện đúng mọi hạt. Ngưỡng mặc định chưa được xác nhận thực nghiệm; nhãn hình dạng để Không xác định khi chưa nhập chuẩn chiều dài.
+Đã xem các hình tiền xử lý, mask/ROI, phân bố đặc trưng và biểu đồ/ảnh phân loại để kiểm tra khả năng đọc của đầu ra notebook.
 
-## Dữ liệu tổng hợp
+## Bằng chứng
 
-Ảnh demo có năm đối tượng với mask và nhãn biết trước từ công thức vẽ. Cấu hình riêng dùng chiều dài chuẩn 70 px và ngưỡng phân đoạn 30. Trên ảnh này, cả năm đối tượng được khớp và các nhãn hình dạng/màu đều đúng. Kết quả chỉ kiểm tra chức năng trên ảnh tổng hợp đã biết, không đại diện độ chính xác trên ảnh thật.
+- Bốn notebook lưu các ô đã chạy cùng bảng/hình đầu ra thực tế.
+- `outputs/notebook/validation.json`: kết quả chạy từng notebook bằng kernel riêng.
+- `outputs/notebook/01_du_lieu/audit.json`: kiểm kê dữ liệu.
+- `outputs/notebook/02_phan_doan/handoff.json`: kết quả và cấu hình phân đoạn.
+- `outputs/notebook/03_dac_trung/handoff.json`: số dòng và dấu vết file đặc trưng.
+- `outputs/notebook/04_phan_loai/`: kết quả phân loại, thống kê và hình minh họa.
 
-## Bằng chứng tái lập
+## Giới hạn diễn giải
 
-- `outputs/verification/unit_tests.txt`: tên và kết quả từng kiểm thử.
-- `outputs/verification/project_checks.json`: kết quả kiểm tra ứng dụng bằng Streamlit AppTest.
-- `outputs/verification/all_images.csv`: từng ảnh, số vùng, số hạt ứng viên, thời gian và lỗi nếu có.
-- `outputs/verification/report.json`: tổng kết lượt rà soát toàn bộ ảnh.
-- `dataset/audit.json`: kiểm kê nguồn ảnh.
-- `dataset/synthetic_demo/evaluation.json`: đối chiếu nhãn tổng hợp.
-- `requirements-tested.txt`: phiên bản thư viện đã dùng.
+**Chưa có nhãn chuẩn từng hạt trên ảnh thật để công bố độ chính xác thực tế.** Các kiểm tra trên xác nhận chương trình chạy được và dữ liệu bàn giao nhất quán; không khẳng định đếm đúng mọi hạt hoặc phân loại đúng mọi trường hợp. Mặc định thiếu chuẩn chiều dài nên nhãn hình dạng ảnh thật là Không xác định. Các tỷ lệ màu vẫn phụ thuộc ngưỡng thử nghiệm và điều kiện chụp.
 
-Đọc README.md để chạy lại, gán nhãn, hiệu chỉnh và đánh giá; đọc BAO_CAO_BTL.md để xem thuật toán và kịch bản bảo vệ. Các ảnh đầu ra demo lặp lại đã được dọn; các bảng và nhật ký kiểm thử ở `outputs/verification/` được giữ lại. Có thể xuất lại ảnh mẫu bằng `python scripts/verify_dataset.py --export-examples`.
+Kết quả 17 kiểm thử của bản module Python trước đây thuộc phiên bản cũ; không được coi là 17 kiểm thử mới cho bản notebook. Lịch sử phiên bản trước được giữ trong Git.
