@@ -1,0 +1,351 @@
+﻿CẤU TRÚC THƯ MỤC VÀ CHỨC NĂNG CỦA DỰ ÁN BTL
+Đề tài: Đánh giá chất lượng gạo bằng xử lý ảnh
+
+Tài liệu này mô tả cấu trúc đang có trong thư mục
+rice-quality-assessment-main để bạn biết dữ liệu nằm ở đâu,
+chương trình chạy từ tệp nào và nên đọc phần nào trước.
+
+====================================================================
+1. DỰ ÁN NÀY LÀM GÌ?
+====================================================================
+
+Nhận ảnh gạo -> tiền xử lý -> tách từng hạt -> đo đặc trưng
+-> phân loại bằng if/else -> thống kê và xuất kết quả.
+
+Mỗi hạt được đánh giá trên hai trục riêng:
+- Hình dạng: Nguyên, Vỡ hoặc Không xác định.
+- Màu sắc: Bình thường, Vàng, Sẫm hoặc Không xác định.
+
+Một hạt có thể vừa vỡ vừa vàng. Dự án không dùng học máy.
+GLCM được dùng để xuất đặc trưng kết cấu bổ trợ.
+
+====================================================================
+2. CÂY THƯ MỤC TỔNG QUÁT
+====================================================================
+
+rice-quality-assessment-main/
+|
+|-- raw_dataset/                         Ảnh nguồn theo nhóm ban đầu
+|   |-- Tot/                             20 ảnh, nhóm Tốt
+|   |-- Vo/                               4 ảnh, nhóm Vỡ
+|   |-- Kem/                              8 ảnh, nhóm Kém
+|   |-- Te/                               4 ảnh, nhóm Tệ
+|   `-- Tap_chat/                         2 ảnh, nhóm Tạp chất
+|
+|-- batch_dataset/                       31 ảnh nhiều hạt để phân tích
+|
+|-- dataset/                             Dữ liệu đã được tổ chức
+|   |-- synthetic_demo/                  Ảnh tổng hợp có nhãn biết trước
+|   |-- manifest.csv                     Danh mục các ảnh nguồn
+|   |-- audit.json                       Tổng kết kiểm kê dữ liệu
+|   |-- calibration_images.csv           Danh sách ảnh hiệu chỉnh
+|   `-- test_images.csv                  Danh sách ảnh kiểm thử sơ bộ
+|
+|-- outputs/                             Kết quả chạy chương trình
+|   `-- verification/                    Bảng và nhật ký kiểm tra
+|
+|-- docs/                                Báo cáo và tài liệu kiểm thử
+|-- scripts/                             Các chương trình hỗ trợ
+|-- tests/                               Các kiểm thử tự động
+|-- .venv/                               Môi trường Python của dự án
+|
+|-- preprocessing.py                     Tiền xử lý ảnh
+|-- segmentation.py                      Phân đoạn và tách hạt
+|-- feature_extraction.py                Trích xuất đặc trưng
+|-- classification.py                    Phân loại bằng quy tắc
+|-- rice_statistics.py                   Thống kê và biểu đồ
+|-- image_io.py                          Đọc và ghi ảnh
+|-- dataset_tools.py                     Kiểm kê và chuẩn bị dữ liệu
+|-- pipeline.py                          Kết nối toàn bộ các bước
+|-- app.py                               Giao diện Streamlit
+|-- main.py                              Chạy bằng dòng lệnh
+|-- calibrate.py                         Khảo sát dữ liệu hiệu chỉnh
+|-- evaluate.py                          Đối chiếu với nhãn kiểm chứng
+|
+|-- README.md                            Hướng dẫn sử dụng chung
+|-- requirements.txt                     Danh sách thư viện cần cài
+|-- requirements-tested.txt              Phiên bản thư viện đã kiểm tra
+|-- setup.bat                            Cài môi trường và thư viện
+|-- run_app.bat                          Khởi động ứng dụng trên Windows
+|-- .gitignore                           Quy tắc bỏ qua tệp khi dùng Git
+`-- CAU_TRUC_THU_MUC_VA_CHUC_NANG.txt    Tài liệu bạn đang đọc
+
+Cây trên chỉ liệt kê các nhóm chính, không liệt kê từng ảnh hoặc
+toàn bộ tệp bên trong môi trường .venv.
+
+====================================================================
+3. CHỨC NĂNG CỦA TỪNG THƯ MỤC
+====================================================================
+
+3.1. raw_dataset/
+
+Chứa ảnh nguồn được xếp theo các tên nhóm Tot, Vo, Kem, Te, Tap_chat.
+Đây là dữ liệu ban đầu để khảo sát và phát triển chương trình.
+
+Lưu ý: tên thư mục là nhãn nhóm ảnh nguồn. Nó không chứng minh từng
+hạt trong ảnh đều có cùng tình trạng. Ví dụ, không được tự coi mọi
+hạt trong Tot đều là hạt nguyên có màu bình thường.
+
+3.2. batch_dataset/
+
+Chứa ảnh nhiều hạt để chạy thử quy trình phân tích cả ảnh/mẻ gạo.
+Một số ảnh có đồng xu hoặc vật tham chiếu cần kiểm tra khi phân đoạn.
+Đây cũng là ảnh nguồn, chưa phải ảnh đầu ra của chương trình.
+
+Hai thư mục ảnh nguồn hiện có tổng cộng 69 tệp; kiểm kê phát hiện
+2 ảnh trùng nội dung, còn 67 ảnh duy nhất.
+
+3.3. dataset/
+
+Chứa thông tin quản lý dữ liệu và ảnh sau bước chuẩn bị.
+
+- manifest.csv:
+  Mỗi dòng mô tả một ảnh nguồn: đường dẫn, nhóm nguồn, kích thước,
+  mã băm, trạng thái đọc, ảnh trùng, tập dữ liệu và đường dẫn ảnh
+  đã tiền xử lý. Đây là danh mục ảnh, không phải bảng nhãn chuẩn
+  đầy đủ cho từng hạt.
+
+- audit.json:
+  Tổng số ảnh, số ảnh đọc được, số ảnh trùng và số lượng theo nhóm.
+
+- calibration_images.csv:
+  Danh sách ảnh dùng để khảo sát đặc trưng và đặt ngưỡng if/else.
+  Calibration ở đây là hiệu chỉnh quy tắc, không phải huấn luyện ML.
+
+- test_images.csv:
+  Danh sách ảnh dự kiến dùng để kiểm thử sau khi cố định ngưỡng.
+  Chia tập hiện tại là sơ bộ; cần kiểm tra các ảnh cùng phiên chụp
+  để tránh dữ liệu quá giống nhau xuất hiện ở cả hai tập.
+
+- processed/ là thư mục có thể sinh lại, hiện đã được dọn:
+  Chạy main.py prepare khi cần tạo lại ảnh resize và tiền xử lý.
+  Mỗi ảnh có một thư mục theo mã nội dung, gồm color.png và gray.png.
+  Trước khi tạo lại, cột color_path và gray_path trong các danh sách
+  ảnh được để trống; ứng dụng vẫn phân tích trực tiếp ảnh nguồn.
+
+- synthetic_demo/:
+  Chứa scene.png là ảnh tổng hợp năm hạt, labels.csv là nhãn sinh
+  từ công thức vẽ, true_mask_*.png là mask thật của từng đối tượng,
+  config.json là cấu hình demo và evaluation.json là kết quả đối chiếu.
+  Dữ liệu này dùng để minh họa chức năng, không đại diện ảnh gạo thật.
+
+3.4. outputs/
+
+Chứa dữ liệu đầu ra sau khi chạy phân tích hoặc kiểm thử.
+
+- verification/:
+  all_images.csv: trạng thái chạy và thống kê của từng ảnh nguồn.
+  all_features.csv: đặc trưng vùng của toàn bộ các ảnh đã rà soát.
+  all_classification.csv: nhãn dự đoán tương ứng với các vùng đó.
+  all_grain_labels_template.csv: mẫu để tự điền nhãn từng hạt.
+  unit_tests.txt: nhật ký kiểm thử tự động.
+  project_checks.json: kết quả kiểm tra ứng dụng và demo tích hợp.
+  report.json: tổng số ảnh chạy thành công/thất bại.
+  Các bảng tổng hợp có thể gồm cả ảnh nguồn trùng và vùng bị loại;
+  cần lọc đúng trước khi dùng làm dữ liệu đánh giá.
+
+Các thư mục examples, notebook_demo, synthetic_demo, qa và smoke
+đã được dọn vì là kết quả sinh lại được. Khi cần ảnh mẫu, chạy:
+python scripts/verify_dataset.py --export-examples
+Lệnh này có thể tạo lại outputs/examples; mặc định không xuất ROI mẫu.
+
+3.5. docs/
+
+- BAO_CAO_BTL.md:
+  Báo cáo kỹ thuật: bài toán, tiêu chí, dữ liệu, các thuật toán,
+  đặc trưng, phân loại, thống kê, giới hạn và kịch bản bảo vệ.
+
+- KET_QUA_KIEM_THU.md:
+  Tổng kết kiểm thử ở thời điểm bàn giao, dẫn tới các tệp bằng chứng.
+  Phân biệt chạy phần mềm thành công với đo độ chính xác trên ảnh thật.
+
+3.6. scripts/
+
+- create_synthetic_demo.py:
+  Tạo ảnh tổng hợp, các mask, nhãn biết trước, cấu hình và kết quả demo.
+
+- verify_dataset.py:
+  Chạy rà soát toàn bộ ảnh nguồn, kiểm tra tính nhất quán và ghi
+  các bảng tổng hợp vào outputs/verification. Chỉ xuất ảnh ví dụ
+  và ROI nếu thêm tùy chọn --export-examples.
+
+- check_project.py:
+  Chạy kiểm thử tự động, kiểm tra chức năng ứng dụng bằng Streamlit
+  AppTest, kiểm tra demo tổng hợp và lưu nhật ký vào outputs/verification.
+
+3.7. tests/
+
+Chứa test_pipeline.py với các kiểm thử hành vi: giữ tỷ lệ ảnh,
+phân loại hai trục, hạt tiếp xúc, ảnh rỗng, đường dẫn tiếng Việt,
+đặc trưng GLCM, hiệu chỉnh và yêu cầu nhãn kiểm chứng.
+
+Chạy kiểm thử giúp phát hiện lỗi phần mềm khi sửa thuật toán.
+Các kiểm thử này không chứng minh độ chính xác trên mọi ảnh thật.
+
+3.8. .venv/ và bộ nhớ đệm Python
+
+- .venv/:
+  Môi trường Python và thư viện phục vụ chạy dự án trên máy hiện tại.
+  Không phải dữ liệu gạo hay mã thuật toán. Khi chuyển máy, nên tạo
+  lại bằng setup.bat thay vì sao chép nguyên thư mục này.
+
+- __pycache__/:
+  Python tự tạo để lưu mã đã biên dịch, giúp nạp module nhanh hơn.
+  Đã được dọn, nhưng có thể tự xuất hiện lại khi chạy Python.
+  Không cần đọc hoặc chỉnh sửa; không cần đưa vào bài nộp.
+
+====================================================================
+4. CHỨC NĂNG CỦA CÁC TỆP CHƯƠNG TRÌNH CHÍNH
+====================================================================
+
+image_io.py
+  Đọc/ghi ảnh, hỗ trợ đường dẫn tiếng Việt trên Windows.
+
+dataset_tools.py
+  Quét ảnh nguồn, kiểm tra khả năng đọc, phát hiện ảnh trùng,
+  tạo manifest, chia tập sơ bộ và xuất hai nhánh ảnh tiền xử lý.
+
+preprocessing.py
+  Resize giữ tỷ lệ, chuyển xám, Gaussian Blur; tùy chọn giữ nguyên
+  tương phản, equalizeHist hoặc CLAHE. Giữ nhánh màu để đo RGB/HSV.
+
+segmentation.py
+  Tạo mask bằng Otsu hoặc ngưỡng thủ công, xử lý hình thái học,
+  nhận diện các vùng, thử tách vùng tiếp xúc bằng Watershed,
+  tạo ID, hộp bao, tâm, contour và mask từng vùng.
+
+feature_extraction.py
+  Đo diện tích, chu vi, dài/rộng, Aspect Ratio, Circularity, Solidity;
+  RGB/HSV, tỷ lệ pixel vàng/sẫm và các đặc trưng kết cấu GLCM.
+
+classification.py
+  Phân loại hình dạng và màu sắc bằng if/else; xuất lý do phân loại
+  và kết luận theo tiêu chí ảnh đã chọn. Có trạng thái chưa xác định.
+
+rice_statistics.py
+  Đếm từng nhóm, tính tỷ lệ, giá trị trung bình và vẽ biểu đồ.
+  Dùng tên này để tránh trùng module statistics chuẩn của Python.
+
+pipeline.py
+  Điều phối toàn bộ luồng: gọi các module, ghép kết quả,
+  vẽ contour/ID/nhãn và xuất ảnh, bảng dữ liệu cùng cấu hình.
+
+app.py
+  Giao diện Streamlit: tải/chọn ảnh, chỉnh tham số, xem các bước,
+  bảng kết quả, biểu đồ, gán nhãn đối chiếu và tải CSV/ZIP/cấu hình.
+
+main.py
+  Điểm chạy bằng dòng lệnh: lệnh prepare để chuẩn bị dữ liệu,
+  lệnh analyze để xử lý một ảnh hoặc cả thư mục.
+
+calibrate.py
+  Dùng nhãn đã kiểm chứng và đặc trưng để khảo sát khoảng giá trị,
+  ước lượng chiều dài hạt nguyên tham chiếu trong cùng tỷ lệ chụp.
+  Không tự xác nhận rằng mọi ngưỡng chất lượng đã phù hợp.
+
+evaluate.py
+  Ghép hộp bao dự đoán với nhãn kiểm chứng, tính độ chính xác nhãn
+  trên hạt khớp. Chỉ tính chỉ số phát hiện/đếm toàn ảnh khi người dùng
+  xác nhận đã gán nhãn hết ảnh bằng cờ --complete-image.
+
+====================================================================
+5. BÊN TRONG MỘT THƯ MỤC KẾT QUẢ CÓ GÌ?
+====================================================================
+
+Ví dụ sau khi tự chạy phân tích: outputs/demo/
+Thư mục này chỉ xuất hiện khi bạn yêu cầu xuất kết quả vào đó.
+
+- color.png: ảnh màu sau resize, giữ tỷ lệ.
+- gray.png: ảnh xám trước khử nhiễu.
+- denoised.png: ảnh xám sau Gaussian Blur.
+- enhanced.png: nhánh xám sau lựa chọn tương phản.
+- mask.png: ảnh nhị phân, trắng là vùng giữ lại, đen là nền.
+- annotated.png: ảnh có contour, ID và nhãn dự đoán.
+- instance_labels.npy: ma trận ID từng vùng; 0 là nền.
+- features.csv: mỗi dòng là vector đặc trưng của một vùng.
+- classification.csv: đặc trưng kèm nhãn, lý do và kết luận.
+- statistics.csv: số lượng và tỷ lệ theo từng trục phân loại.
+- statistics.png: biểu đồ thống kê.
+- summary.json: số liệu tổng hợp, cảnh báo, cấu hình và thông tin ảnh.
+- grain_labels_template.csv: mẫu nhãn thủ công, ban đầu chưa kiểm chứng.
+- rois/: ảnh màu cắt nhỏ và mask riêng của từng vùng phát hiện.
+
+ROI là vùng ảnh cắt quanh một đối tượng.
+Mask là ảnh đánh dấu pixel thuộc đối tượng.
+Contour là đường biên đối tượng.
+
+Lưu ý: ID phụ thuộc lần phân đoạn. Đổi ảnh hoặc tham số có thể đổi ID.
+Khi đổi cấu hình, nên xuất sang thư mục mới để tránh dùng nhãn cũ
+cho mask mới. Hãy giữ riêng các CSV bạn đã gán nhãn thủ công.
+
+====================================================================
+6. PHÂN CÔNG VÀ THỨ TỰ ĐỌC ĐỂ HIỂU BÀI
+====================================================================
+
+Theo bốn phần phân công:
+
+- Thành viên 1: raw_dataset, batch_dataset, dataset,
+  image_io.py, dataset_tools.py và preprocessing.py.
+- Thành viên 2: segmentation.py.
+- Thành viên 3: feature_extraction.py.
+- Thành viên 4: classification.py, rice_statistics.py,
+  calibrate.py và evaluate.py.
+- Tích hợp chung: pipeline.py, main.py và app.py.
+
+Thứ tự đọc đề xuất:
+
+1. README.md để biết cách cài và chạy.
+2. docs/BAO_CAO_BTL.md để hiểu bài toán, thuật toán và giới hạn.
+3. dataset/manifest.csv và preprocessing.py để xem dữ liệu và tiền xử lý.
+4. preprocessing.py -> segmentation.py -> feature_extraction.py
+   -> classification.py -> rice_statistics.py để theo luồng thuật toán.
+5. pipeline.py để hiểu cách ghép các module.
+6. app.py và main.py để xem cách chạy hệ thống tích hợp.
+7. tests/test_pipeline.py và docs/KET_QUA_KIEM_THU.md để xem kiểm tra.
+
+Để chạy giao diện trên Windows: mở run_app.bat.
+Nếu là máy mới: cài Python phù hợp, chạy setup.bat rồi run_app.bat.
+
+====================================================================
+7. PHÂN BIỆT TỆP CẦN GIỮ VÀ TỆP TỰ SINH
+====================================================================
+
+Nên giữ khi bàn giao/nộp bài:
+- Mã nguồn .py và các tệp cài/chạy; hai notebook chính đã được loại bỏ.
+- requirements.txt, requirements-tested.txt, README.md và docs/.
+- scripts/ và tests/ để có thể tái lập và kiểm tra.
+- Ảnh nguồn raw_dataset/ và batch_dataset/ nếu yêu cầu nộp dữ liệu.
+- Manifest, thông tin chia tập, nhãn và dữ liệu demo cần thiết.
+- Một số kết quả mẫu cùng bằng chứng kiểm thử phù hợp.
+
+Không cần đưa vào gói mã nguồn:
+- .venv/ và mọi thư mục __pycache__/.
+
+Các phần có thể sinh lại khi còn mã và ảnh nguồn:
+- dataset/processed/ bằng bước prepare.
+- Các đầu ra phân tích và kiểm thử trong outputs/.
+  Tuy nhiên, CSV đã được bạn tự sửa/gán nhãn cần sao lưu trước;
+  không được coi mọi tệp trong outputs là dữ liệu bỏ đi.
+
+.gitignore chỉ quy định tệp Git bỏ qua; nó không tự xóa thư mục
+và cũng không có nghĩa là các tệp bị bỏ qua đều không cần lưu.
+
+Tài liệu này chỉ giải thích cấu trúc, không thực hiện xóa hoặc di chuyển
+bất kỳ thư mục nào của dự án.
+
+====================================================================
+8. LƯU Ý KHI DIỄN GIẢI KẾT QUẢ BTL
+====================================================================
+
+Chạy được toàn bộ ảnh và vượt qua kiểm thử phần mềm không đồng nghĩa
+đếm đúng hoặc phân loại đúng mọi hạt trên ảnh thật.
+
+Nhãn thư mục nguồn, nhãn dự đoán và nhãn thủ công kiểm chứng là ba
+loại thông tin khác nhau. Hiện ảnh thật chưa có bộ nhãn chuẩn từng
+hạt được kiểm chứng đầy đủ; cần bổ sung để đo độ chính xác thực tế.
+
+Nếu chưa nhập chiều dài hạt nguyên tham chiếu, hình dạng được để
+Không xác định. Ngưỡng màu mặc định cũng là ngưỡng thử nghiệm.
+
+Độ dài/diện tích xuất ra được quy về pixel của ảnh gốc, không phải mm.
+Không dùng kết quả ảnh tổng hợp để công bố độ chính xác trên ảnh thật.

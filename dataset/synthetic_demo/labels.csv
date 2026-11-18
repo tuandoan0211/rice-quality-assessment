@@ -1,0 +1,6 @@
+﻿image_path,grain_id,bbox_x,bbox_y,bbox_w,bbox_h,shape_label,color_label,reviewer,verified,notes
+dataset/synthetic_demo/scene.png,1,47,64,67,33,Nguyên,Bình thường,synthetic_generator,True,SYNTHETIC ground truth from drawing recipe; not a real-world manual label.
+dataset/synthetic_demo/scene.png,2,202,68,37,25,Vỡ,Bình thường,synthetic_generator,True,SYNTHETIC ground truth from drawing recipe; not a real-world manual label.
+dataset/synthetic_demo/scene.png,3,332,56,57,49,Nguyên,Vàng,synthetic_generator,True,SYNTHETIC ground truth from drawing recipe; not a real-world manual label.
+dataset/synthetic_demo/scene.png,4,467,64,67,33,Nguyên,Sẫm,synthetic_generator,True,SYNTHETIC ground truth from drawing recipe; not a real-world manual label.
+dataset/synthetic_demo/scene.png,5,142,198,37,25,Vỡ,Vàng,synthetic_generator,True,SYNTHETIC ground truth from drawing recipe; not a real-world manual label.

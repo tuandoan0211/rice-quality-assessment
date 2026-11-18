@@ -1,0 +1,12 @@
+﻿processed_dataset/
+.venv/
+__pycache__/
+.ipynb_checkpoints/
+dataset/processed/
+outputs/
+*.pyc
+.env
+.env.*
+!.env.example
+Thumbs.db
+.DS_Store
